@@ -101,6 +101,7 @@ SRCS += \
   ../watch_faces/complication/habit_face.c \
   ../watch_faces/complication/milk_log_face.c \
   ../watch_faces/complication/panchang_face.c \
+  ../watch_faces/complication/moonrise_moonset_face.c \
 # New watch faces go above this line.
 
 # Leave this line at the bottom of the file; it has all the targets for making your project.

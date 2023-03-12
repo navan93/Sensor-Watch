@@ -77,6 +77,7 @@
 #include "habit_face.h"
 #include "milk_log_face.h"
 #include "panchang_face.h"
+#include "moonrise_moonset_face.h"
 // New includes go above this line.
 
 #endif // MOVEMENT_FACES_H_
