@@ -25,6 +25,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "moonrise_moonset_face.h"
+#include "watch_utility.h"
+#include <math.h>
+#include "moonriset.h"
+
+static MoonRise moon_info;
 
 void moonrise_moonset_face_setup(movement_settings_t *settings, uint8_t watch_face_index, void ** context_ptr) {
     (void) settings;
@@ -41,6 +46,62 @@ void moonrise_moonset_face_activate(movement_settings_t *settings, void *context
     moonrise_moonset_state_t *state = (moonrise_moonset_state_t *)context;
 
     // Handle any tasks related to your watch face coming on screen.
+    moon_info.queryTime = 0;
+    moon_info.riseTime = 0;
+    moon_info.setTime = 0;
+    moon_info.riseAz = 0;
+    moon_info.setAz = 0;
+    moon_info.hasRise = false;
+    moon_info.hasSet = false;
+    moon_info.isVisible = false;
+
+    char buf[14];
+
+    initClass(&moon_info);
+
+    watch_date_time date_time = watch_rtc_get_date_time();
+    uint32_t timestamp = watch_utility_date_time_to_unix_time(date_time, movement_timezone_offsets[settings->bit.time_zone] * 60);
+    date_time = watch_utility_date_time_from_unix_time(timestamp, 0);
+    double jd = astro_convert_date_to_julian_date(date_time.unit.year + WATCH_RTC_REFERENCE_YEAR, date_time.unit.month, date_time.unit.day, date_time.unit.hour, date_time.unit.minute, date_time.unit.second);
+
+    movement_location_t movement_location = (movement_location_t) watch_get_backup_data(1);
+    int16_t lat_centi = (int16_t)movement_location.bit.latitude;
+    int16_t lon_centi = (int16_t)movement_location.bit.longitude;
+    double lat = (double)lat_centi / 100.0;
+    double lon = (double)lon_centi / 100.0;
+    double latitude_radians = astro_degrees_to_radians(lat);
+    double longitude_radians = astro_degrees_to_radians(lon);
+
+    // watch_display_string("LU        ", 0);
+
+    calculate(lat, lon, timestamp);
+    printf("Moon rise/set nearest %.24s for latitude %.2f longitude %.2f:\n",
+	 ctime(&moon_info.queryTime), lat, lon);
+    printf("Preceding event:\n");
+    if ((!moon_info.hasRise || (moon_info.hasRise && moon_info.riseTime > moon_info.queryTime)) &&
+        (!moon_info.hasSet || (moon_info.hasSet && moon_info.setTime > moon_info.queryTime)))
+        printf("\tNo moon rise or set during preceding %d hours\n", MR_WINDOW/2);
+    if (moon_info.hasRise && moon_info.riseTime < moon_info.queryTime)
+        printf("\tMoon rise at %.24s, Azimuth %.2f\n", ctime(&moon_info.riseTime), moon_info.riseAz);
+    if (moon_info.hasSet && moon_info.setTime < moon_info.queryTime)
+        printf("\tMoon set at  %.24s, Azimuth %.2f\n", ctime(&moon_info.setTime), moon_info.setAz);
+
+    printf("Succeeding event:\n");
+    if ((!moon_info.hasRise || (moon_info.hasRise && moon_info.riseTime < moon_info.queryTime)) &&
+        (!moon_info.hasSet || (moon_info.hasSet && moon_info.setTime < moon_info.queryTime)))
+        printf("\tNo moon rise or set during succeeding %d hours\n", MR_WINDOW/2);
+    if (moon_info.hasRise && moon_info.riseTime > moon_info.queryTime) {
+        printf("\tMoon rise at %.24s, Azimuth %.2f\n", ctime(&moon_info.riseTime), moon_info.riseAz);
+        date_time = watch_utility_date_time_from_unix_time(moon_info.riseTime, movement_timezone_offsets[settings->bit.time_zone] * 60);
+        sprintf(buf, "rI%2d%2d%02d  ", date_time.unit.day, date_time.unit.hour, date_time.unit.minute);
+        watch_display_string(buf, 0);
+    }
+    if (moon_info.hasSet && moon_info.setTime > moon_info.queryTime) {
+        printf("\tMoon set at  %.24s, Azimuth %.2f\n", ctime(&moon_info.setTime), moon_info.setAz);
+        date_time = watch_utility_date_time_from_unix_time(moon_info.setTime, movement_timezone_offsets[settings->bit.time_zone] * 60);
+        sprintf(buf, "SE%2d%2d%02d  ", date_time.unit.day, date_time.unit.hour, date_time.unit.minute);
+        watch_display_string(buf, 0);
+    }
 }
 
 bool moonrise_moonset_face_loop(movement_event_t event, movement_settings_t *settings, void *context) {
@@ -49,6 +110,7 @@ bool moonrise_moonset_face_loop(movement_event_t event, movement_settings_t *set
     switch (event.event_type) {
         case EVENT_ACTIVATE:
             // Show your initial UI here.
+
             break;
         case EVENT_TICK:
             // If needed, update your display here.

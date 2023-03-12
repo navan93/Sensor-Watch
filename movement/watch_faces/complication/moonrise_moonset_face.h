@@ -26,6 +26,7 @@
 #define MOONRISE_MOONSET_FACE_H_
 
 #include "movement.h"
+#include "astrolib.h"
 
 /*
  * A DESCRIPTION OF YOUR WATCH FACE

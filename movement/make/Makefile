@@ -24,6 +24,7 @@ INCLUDES += \
   -I../lib/astrolib/ \
   -I../lib/morsecalc/ \
   -I../lib/plib \
+  -I../lib/moonriset \
 
 # If you add any other source files you wish to compile, add them after ../app.c
 # Note that you will need to add a backslash at the end of any line you wish to continue, i.e.
@@ -45,6 +46,7 @@ SRCS += \
   ../lib/morsecalc/calc_strtof.c \
   ../lib/morsecalc/mc.c \
   ../lib/plib/plib.c \
+  ../lib/moonriset/moonriset.c \
   ../../littlefs/lfs.c \
   ../../littlefs/lfs_util.c \
   ../movement.c \
