@@ -60,7 +60,7 @@ calculate(double latitude, double longitude, time_t t) {
   moon_info->queryTime = t;
   offsetDays = julianDate(t) - 2451545L;     // Days since Jan 1, 2000, 1200UTC.
   // Begin testing (MR_WINDOW / 2) hours before requested time.
-  offsetDays -= (double)MR_WINDOW / (2 * 24) ;
+//   offsetDays -= (double)MR_WINDOW / (2 * 24) ;
 
   // Calculate coordinates at start, middle, and end of search period.
   for (int i = 0; i < 3; i++) {
@@ -147,7 +147,7 @@ testMoonRiseSet(int k, double offsetDays, double latitude, double longitude,
   // The time we started searching + the time from the start of the search to the
   // event is the time of the event.  Add (time since k=0) - window/2 hours.
   time_t eventTime;
-  eventTime = moon_info->queryTime + (time - MR_WINDOW / 2) *60 *60;
+  eventTime = moon_info->queryTime + time * 60 * 60;
 
   double hz, nz, dz, az;
   hz = ha[0] + e * (ha[2] - ha[0]);	    // Azimuth of the moon at the event.

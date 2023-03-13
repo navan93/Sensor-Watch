@@ -12,7 +12,7 @@
 // windows will increase interpolation error.  Useful values are probably from
 // 12 - 48 but will depend upon your application.
 
-#define MR_WINDOW   24	    // Even integer
+#define MR_WINDOW   48	    // Even integer
 
 typedef struct  {
     time_t queryTime;

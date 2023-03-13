@@ -20,6 +20,11 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ *
+ * This face shows the moonrise and moonset times for a given location. The calculation
+ * is taken from https://github.com/signetica/MoonRise.
+ * TODO:
+ *  1. Show 12/24 h time based on the global setting (currently shows only 24h)
  */
 
 #include <stdlib.h>
@@ -30,19 +35,13 @@
 #include "moonriset.h"
 
 static MoonRise moon_info;
+static uint8_t splash_tick;
+static char disp_buf1[14];
+static char disp_buf2[14];
+static char *disp_buf;
 
-void moonrise_moonset_face_setup(movement_settings_t *settings, uint8_t watch_face_index, void ** context_ptr) {
-    (void) settings;
-    if (*context_ptr == NULL) {
-        *context_ptr = malloc(sizeof(moonrise_moonset_state_t));
-        memset(*context_ptr, 0, sizeof(moonrise_moonset_state_t));
-        // Do any one-time tasks in here; the inside of this conditional happens only at boot.
-    }
-    // Do any pin or peripheral setup here; this will be called whenever the watch wakes from deep sleep.
-}
-
-void moonrise_moonset_face_activate(movement_settings_t *settings, void *context) {
-    (void) settings;
+static void find_moon_rise_set(movement_settings_t *settings, void *context) {
+    // (void) settings;
     moonrise_moonset_state_t *state = (moonrise_moonset_state_t *)context;
 
     // Handle any tasks related to your watch face coming on screen.
@@ -55,7 +54,7 @@ void moonrise_moonset_face_activate(movement_settings_t *settings, void *context
     moon_info.hasSet = false;
     moon_info.isVisible = false;
 
-    char buf[14];
+    char *buf;
 
     initClass(&moon_info);
 
@@ -72,36 +71,54 @@ void moonrise_moonset_face_activate(movement_settings_t *settings, void *context
     double latitude_radians = astro_degrees_to_radians(lat);
     double longitude_radians = astro_degrees_to_radians(lon);
 
-    // watch_display_string("LU        ", 0);
 
     calculate(lat, lon, timestamp);
     printf("Moon rise/set nearest %.24s for latitude %.2f longitude %.2f:\n",
 	 ctime(&moon_info.queryTime), lat, lon);
-    printf("Preceding event:\n");
-    if ((!moon_info.hasRise || (moon_info.hasRise && moon_info.riseTime > moon_info.queryTime)) &&
-        (!moon_info.hasSet || (moon_info.hasSet && moon_info.setTime > moon_info.queryTime)))
-        printf("\tNo moon rise or set during preceding %d hours\n", MR_WINDOW/2);
-    if (moon_info.hasRise && moon_info.riseTime < moon_info.queryTime)
-        printf("\tMoon rise at %.24s, Azimuth %.2f\n", ctime(&moon_info.riseTime), moon_info.riseAz);
-    if (moon_info.hasSet && moon_info.setTime < moon_info.queryTime)
-        printf("\tMoon set at  %.24s, Azimuth %.2f\n", ctime(&moon_info.setTime), moon_info.setAz);
 
     printf("Succeeding event:\n");
     if ((!moon_info.hasRise || (moon_info.hasRise && moon_info.riseTime < moon_info.queryTime)) &&
         (!moon_info.hasSet || (moon_info.hasSet && moon_info.setTime < moon_info.queryTime)))
         printf("\tNo moon rise or set during succeeding %d hours\n", MR_WINDOW/2);
-    if (moon_info.hasRise && moon_info.riseTime > moon_info.queryTime) {
+    if (moon_info.hasRise) {
         printf("\tMoon rise at %.24s, Azimuth %.2f\n", ctime(&moon_info.riseTime), moon_info.riseAz);
         date_time = watch_utility_date_time_from_unix_time(moon_info.riseTime, movement_timezone_offsets[settings->bit.time_zone] * 60);
+        if(moon_info.hasSet && moon_info.riseTime > moon_info.setTime)
+            buf = disp_buf2;
+        else
+            buf = disp_buf1;
         sprintf(buf, "rI%2d%2d%02d  ", date_time.unit.day, date_time.unit.hour, date_time.unit.minute);
-        watch_display_string(buf, 0);
     }
-    if (moon_info.hasSet && moon_info.setTime > moon_info.queryTime) {
+    if (moon_info.hasSet) {
         printf("\tMoon set at  %.24s, Azimuth %.2f\n", ctime(&moon_info.setTime), moon_info.setAz);
         date_time = watch_utility_date_time_from_unix_time(moon_info.setTime, movement_timezone_offsets[settings->bit.time_zone] * 60);
+        // watch_display_string(buf, 0);
+        if(moon_info.hasRise && moon_info.riseTime < moon_info.setTime)
+            buf = disp_buf2;
+        else
+            buf = disp_buf1;
         sprintf(buf, "SE%2d%2d%02d  ", date_time.unit.day, date_time.unit.hour, date_time.unit.minute);
-        watch_display_string(buf, 0);
     }
+}
+
+void moonrise_moonset_face_setup(movement_settings_t *settings, uint8_t watch_face_index, void ** context_ptr) {
+    (void) settings;
+    if (*context_ptr == NULL) {
+        *context_ptr = malloc(sizeof(moonrise_moonset_state_t));
+        memset(*context_ptr, 0, sizeof(moonrise_moonset_state_t));
+        // Do any one-time tasks in here; the inside of this conditional happens only at boot.
+    }
+    // Do any pin or peripheral setup here; this will be called whenever the watch wakes from deep sleep.
+}
+
+void moonrise_moonset_face_activate(movement_settings_t *settings, void *context) {
+    (void) settings;
+    moonrise_moonset_state_t *state = (moonrise_moonset_state_t *)context;
+
+    // Handle any tasks related to your watch face coming on screen.
+    sprintf(disp_buf1, "LU  NORISE");
+    sprintf(disp_buf2, "LU  NO SET");
+    disp_buf = disp_buf1;
 }
 
 bool moonrise_moonset_face_loop(movement_event_t event, movement_settings_t *settings, void *context) {
@@ -110,10 +127,18 @@ bool moonrise_moonset_face_loop(movement_event_t event, movement_settings_t *set
     switch (event.event_type) {
         case EVENT_ACTIVATE:
             // Show your initial UI here.
-
+            watch_display_string("ri  LUNA  ", 0);
+            splash_tick = 0;
             break;
         case EVENT_TICK:
             // If needed, update your display here.
+            if(splash_tick<2)
+                splash_tick++;
+            else if(splash_tick == 2) {
+                find_moon_rise_set(settings, context);
+                watch_display_string(disp_buf, 0);
+                watch_set_colon();
+            }
             break;
         case EVENT_LIGHT_BUTTON_UP:
             // You can use the Light button for your own purposes. Note that by default, Movement will also
@@ -122,6 +147,11 @@ bool moonrise_moonset_face_loop(movement_event_t event, movement_settings_t *set
             break;
         case EVENT_ALARM_BUTTON_UP:
             // Just in case you have need for another button.
+            if(disp_buf == disp_buf1)
+                disp_buf = disp_buf2;
+            else
+                disp_buf = disp_buf1;
+            watch_display_string(disp_buf, 0);
             break;
         case EVENT_TIMEOUT:
             // Your watch face will receive this event after a period of inactivity. If it makes sense to resign,
