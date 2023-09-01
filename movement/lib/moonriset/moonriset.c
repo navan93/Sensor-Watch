@@ -25,6 +25,7 @@
 
 #include <math.h>
 #include "moonriset.h"
+#include <stdlib.h>
 
 #define K1 15*(M_PI/180)*1.0027379
 
@@ -177,7 +178,7 @@ testMoonRiseSet(int k, double offsetDays, double latitude, double longitude,
   if ((VHz[0] < 0) && (VHz[2] > 0)) {
     if (!moon_info->hasRise ||
 	((moon_info->riseTime < moon_info->queryTime) == (eventTime < moon_info->queryTime) &&
-	 fabs(moon_info->riseTime - moon_info->queryTime) > fabs(eventTime - moon_info->queryTime)) ||
+	 llabs(moon_info->riseTime - moon_info->queryTime) > llabs(eventTime - moon_info->queryTime)) ||
 	((moon_info->riseTime < moon_info->queryTime) != (eventTime < moon_info->queryTime) &&
 	 (moon_info->hasSet &&
 	  (moon_info->riseTime < moon_info->queryTime) == (moon_info->setTime < moon_info->queryTime)))) {
@@ -189,7 +190,7 @@ testMoonRiseSet(int k, double offsetDays, double latitude, double longitude,
   if ((VHz[0] > 0) && (VHz[2] < 0)) {
     if (!moon_info->hasSet ||
 	((moon_info->setTime < moon_info->queryTime) == (eventTime < moon_info->queryTime) &&
-	 fabs(moon_info->setTime - moon_info->queryTime) > fabs(eventTime - moon_info->queryTime)) ||
+	 llabs(moon_info->setTime - moon_info->queryTime) > llabs(eventTime - moon_info->queryTime)) ||
 	((moon_info->setTime < moon_info->queryTime) != (eventTime < moon_info->queryTime) &&
 	 (moon_info->hasRise &&
 	  (moon_info->setTime < moon_info->queryTime) == (moon_info->riseTime < moon_info->queryTime)))) {

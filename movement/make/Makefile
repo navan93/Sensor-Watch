@@ -46,7 +46,6 @@ SRCS += \
   ../lib/morsecalc/calc.c \
   ../lib/morsecalc/calc_fns.c \
   ../lib/morsecalc/calc_strtof.c \
-  ../lib/morsecalc/mc.c \
   ../lib/morsecalc/morsecalc_display.c \
   ../lib/plib/plib.c \
   ../lib/moonriset/moonriset.c \

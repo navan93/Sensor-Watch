@@ -41,8 +41,7 @@ static char disp_buf2[14];
 static char *disp_buf;
 
 static void find_moon_rise_set(movement_settings_t *settings, void *context) {
-    // (void) settings;
-    moonrise_moonset_state_t *state = (moonrise_moonset_state_t *)context;
+    (void) context;
 
     // Handle any tasks related to your watch face coming on screen.
     moon_info.queryTime = 0;
@@ -61,15 +60,12 @@ static void find_moon_rise_set(movement_settings_t *settings, void *context) {
     watch_date_time date_time = watch_rtc_get_date_time();
     uint32_t timestamp = watch_utility_date_time_to_unix_time(date_time, movement_timezone_offsets[settings->bit.time_zone] * 60);
     date_time = watch_utility_date_time_from_unix_time(timestamp, 0);
-    double jd = astro_convert_date_to_julian_date(date_time.unit.year + WATCH_RTC_REFERENCE_YEAR, date_time.unit.month, date_time.unit.day, date_time.unit.hour, date_time.unit.minute, date_time.unit.second);
 
     movement_location_t movement_location = (movement_location_t) watch_get_backup_data(1);
     int16_t lat_centi = (int16_t)movement_location.bit.latitude;
     int16_t lon_centi = (int16_t)movement_location.bit.longitude;
     double lat = (double)lat_centi / 100.0;
     double lon = (double)lon_centi / 100.0;
-    double latitude_radians = astro_degrees_to_radians(lat);
-    double longitude_radians = astro_degrees_to_radians(lon);
 
 
     calculate(lat, lon, timestamp);
@@ -103,6 +99,8 @@ static void find_moon_rise_set(movement_settings_t *settings, void *context) {
 
 void moonrise_moonset_face_setup(movement_settings_t *settings, uint8_t watch_face_index, void ** context_ptr) {
     (void) settings;
+    (void) watch_face_index;
+
     if (*context_ptr == NULL) {
         *context_ptr = malloc(sizeof(moonrise_moonset_state_t));
         memset(*context_ptr, 0, sizeof(moonrise_moonset_state_t));
@@ -113,7 +111,7 @@ void moonrise_moonset_face_setup(movement_settings_t *settings, uint8_t watch_fa
 
 void moonrise_moonset_face_activate(movement_settings_t *settings, void *context) {
     (void) settings;
-    moonrise_moonset_state_t *state = (moonrise_moonset_state_t *)context;
+    (void) context;
 
     // Handle any tasks related to your watch face coming on screen.
     sprintf(disp_buf1, "LU  NORISE");
@@ -122,7 +120,7 @@ void moonrise_moonset_face_activate(movement_settings_t *settings, void *context
 }
 
 bool moonrise_moonset_face_loop(movement_event_t event, movement_settings_t *settings, void *context) {
-    moonrise_moonset_state_t *state = (moonrise_moonset_state_t *)context;
+    (void) context;
 
     switch (event.event_type) {
         case EVENT_ACTIVATE:
