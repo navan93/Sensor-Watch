@@ -94,8 +94,7 @@ static void show_panchang(watch_date_time date_time, uint16_t tz_offset)
             break;
     }
     strncpy(buf+4, pdata.dnakshatra, 6);
-    // printf("Panchang if %d-%d-%d-%f: %s\n",dd,mm,yy,hr, buf);
-    // printf("Hellow World\n");
+    printf("Panchang of %d-%d-%d-%f: %s\n",dd,mm,yy,hr, buf);
     watch_display_string(buf, 0);
     // watch_display_string("CR 5Pushya", 0);
 }
@@ -109,7 +108,7 @@ static void show_rahu_kalam(watch_date_time date_time)
     uint16_t rahu_kalam_end = rahu_kalam_start + 90;
     char buf[12] = {0};
 
-    // printf("Rahu kalam for %d is %d to %d\n", weekday, rahu_kalam_start, rahu_kalam_end);
+    printf("Rahu kalam for %d is %d to %d\n", weekday, rahu_kalam_start, rahu_kalam_end);
 
     sprintf(buf, "rt%2d%2d%2d%2d", rahu_kalam_end/60, rahu_kalam_start/60, rahu_kalam_start%60, rahu_kalam_end%60);
     watch_display_string(buf, 0);
@@ -139,7 +138,6 @@ bool panchang_face_loop(movement_event_t event, movement_settings_t *settings, v
             // Show your initial UI here.
             state->curr_view = DAY_PANCHANG;
             _update_display(settings, context);
-            printf("Hellow World\n");
             break;
         case EVENT_TICK:
             // If needed, update your display here.
