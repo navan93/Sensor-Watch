@@ -29,8 +29,9 @@
 
 const watch_face_t watch_faces[] = {
     simple_clock_face,
-    panchang_face,
     milk_log_face,
+    moonrise_moonset_face,
+    panchang_face,
     thermistor_readout_face,
     thermistor_logging_face,
     sunrise_sunset_face,

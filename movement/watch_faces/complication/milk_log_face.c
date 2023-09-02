@@ -155,6 +155,7 @@ bool milk_log_face_loop(movement_event_t event, movement_settings_t *settings, v
             // watch_start_tick_animation(500);
             break;
         default:
+            return movement_default_loop_handler(event, settings);
             break;
     }
 
