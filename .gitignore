@@ -25,3 +25,4 @@ _autosave*
 fp-info-cache
 .~*
 *.plan
+movement/watch_faces/complication/totp_face_keys.c

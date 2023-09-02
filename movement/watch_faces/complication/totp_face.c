@@ -17,12 +17,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Enter your TOTP key data below
 static const uint8_t num_keys = 2;
-static uint8_t keys[] = {
-    0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x21, 0xde, 0xad, 0xbe, 0xef, // 1 - JBSWY3DPEHPK3PXP
-    0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x21, 0xde, 0xad, 0xbe, 0xef, // 2 - JBSWY3DPEHPK3PXP
-};
+// static uint8_t keys[] = {
+//     0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x21, 0xde, 0xad, 0xbe, 0xef, // 1 - JBSWY3DPEHPK3PXP
+//     0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x21, 0xde, 0xad, 0xbe, 0xef, // 2 - JBSWY3DPEHPK3PXP
+// };
+#include "totp_face_keys.c"
 static const uint8_t key_sizes[] = {
-    10,
+    20,
     10,
 };
 static const uint32_t timesteps[] = {
@@ -30,8 +31,8 @@ static const uint32_t timesteps[] = {
     30,
 };
 static const char labels[][2] = {
-    { '2', 'F' },
-    { 'A', 'C' },
+    { 'H', 'A' },
+    { 'G', 'H' },
 };
 static const hmac_alg algorithms[] = {
     SHA1,
