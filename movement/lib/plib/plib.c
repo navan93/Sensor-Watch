@@ -21,6 +21,7 @@
 #define R2D (180.0/M_PI)
 #define REV(x)	((x)-floor((x)/360.0)*360.0)
 
+/*
 static char month[][15]={"January","February","March","April","May","June",
 		  "July","August","September","October","November","December"};
 
@@ -38,7 +39,6 @@ static char tithi[][15]={"Prathame","Dwithiya","Thrithiya","Chathurthi","Pancham
 
 static char karan[][15]={"Bava","Balava","Kaulava","Taitula","Garija","Vanija",
 		  "Visti","Sakuni","Chatuspada","Naga","Kimstughna"};
-
 static char yoga[][15]={"Vishkambha","Prithi","Ayushman","Saubhagya","Shobhana",
 		 "Atiganda","Sukarman","Dhrithi","Shoola","Ganda","Vridhi",
 		 "Dhruva","Vyaghata","Harshana","Vajra","Siddhi","Vyatipata",
@@ -50,6 +50,7 @@ static char nakshatra[][20]={"Ashwini","Bharani","Krittika","Rohini","Mrigashira
 		      "Hasta","Chitra","Swathi","Vishaka","Anuradha","Jyeshta","Mula",
 		      "Poorva Ashada","Uttara Ashada","Sravana","Dhanishta","Shatabisha",
 		      "Poorva Bhadra","Uttara Bhadra","Revathi"};
+*/
 
 static char nakshatra_short[][7]={"Aswini","Bharni","Kritka","Rohini","Mrgsra","Ardhra",
 		      "Pnrvsu","Pushya","Ashles","Magha","PPlgni","UPlgni",
@@ -77,10 +78,9 @@ static float calc_ayanamsa(float d)
 //Longitude of Sun
 static float sun_long(float d)
 {
-	float w, a, e, M, E, x, y, r, v, tmp;
+	float w, e, M, E, x, y, v, tmp;
 
 	w = 282.9404+4.70935e-5*d;
-	a = 1.000000;
 	e = 0.016709-1.151e-9*d;
 	M = REV(356.0470+0.9856002585*d);
 	Ms = M;
@@ -93,7 +93,6 @@ static float sun_long(float d)
 	x = cos(tmp)-e;
 	y = sin(tmp)*sqrt(1-e*e);
 
-	r = sqrt(x*x + y*y);
 	v = REV(R2D*atan2(y,x));
 
 	return REV(v+w);
@@ -102,7 +101,7 @@ static float sun_long(float d)
 //Longitude of Moon
 static float moon_long(float d)
 {
-	float N, i, w, a, e, M, E, Et, x, y, r, v, xec, yec, zec, D, F, tmp, tmp1, tmp2, lon;
+	float N, i, w, a, e, M, E, Et, x, y, r, v, xec, yec, D, F, tmp, tmp1, tmp2, lon;
 
 	N = 125.1228-0.0529538083*d;
  	i = 5.1454;
@@ -138,7 +137,6 @@ static float moon_long(float d)
 	tmp2 = D2R*i;
 	xec = r*(cos(tmp)*cos(tmp1)-sin(tmp)*sin(tmp1)*cos(tmp2));
 	yec = r*(sin(tmp)*cos(tmp1)+cos(tmp)*sin(tmp1)*cos(tmp2));
-	zec = r*sin(tmp1)*sin(tmp2);
 
 	//Do some corrections
 	D = Lm - Ls;

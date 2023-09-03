@@ -42,6 +42,7 @@ static uint16_t rahu_kalam_offsets [7] = {
 
 void panchang_face_setup(movement_settings_t *settings, uint8_t watch_face_index, void ** context_ptr) {
     (void) settings;
+    (void) watch_face_index;
     if (*context_ptr == NULL) {
         *context_ptr = malloc(sizeof(panchang_state_t));
         memset(*context_ptr, 0, sizeof(panchang_state_t));
@@ -85,8 +86,8 @@ static void show_panchang(watch_date_time date_time, uint16_t tz_offset)
 	// calculate_panchanga(7, 3, 2023, 21, 5.5, &pdata);
     strncpy(buf, pdata.dpaksha, 2);
     switch(pdata.tithi) {
-        case 15: strncpy(buf+2, " P", 2); break;
-        case 30: strncpy(buf+2, " A", 2); break;
+        case 15: memcpy(buf+2, " P", 2); break;
+        case 30: memcpy(buf+2, " A", 2); break;
         default:
             if(pdata.tithi>15)
                 pdata.tithi -= 15;
@@ -106,13 +107,17 @@ static void show_rahu_kalam(watch_date_time date_time)
     uint16_t sunrise = 6*60; //TODO: Get actual sunrise time for the day
     uint16_t rahu_kalam_start = rahu_kalam_offsets[weekday] + sunrise;
     uint16_t rahu_kalam_end = rahu_kalam_start + 90;
-    char buf[12] = {0};
+    char buf[10] = {0};
 
     printf("Rahu kalam for %d is %d to %d\n", weekday, rahu_kalam_start, rahu_kalam_end);
 
-    sprintf(buf, "rt%2d%2d%2d%2d", rahu_kalam_end/60, rahu_kalam_start/60, rahu_kalam_start%60, rahu_kalam_end%60);
+    snprintf(buf, sizeof(buf), "rt%2d%2d%2d%2d",
+        rahu_kalam_end/60,
+        rahu_kalam_start/60,
+        rahu_kalam_start%60,
+        rahu_kalam_end%60
+    );
     watch_display_string(buf, 0);
-
 }
 
 static void _update_display(movement_settings_t *settings, void *context)
@@ -131,7 +136,6 @@ static void _update_display(movement_settings_t *settings, void *context)
 
 bool panchang_face_loop(movement_event_t event, movement_settings_t *settings, void *context) {
     panchang_state_t *state = (panchang_state_t *)context;
-    watch_date_time date_time;
 
     switch (event.event_type) {
         case EVENT_ACTIVATE:
@@ -149,7 +153,6 @@ bool panchang_face_loop(movement_event_t event, movement_settings_t *settings, v
             break;
         case EVENT_ALARM_BUTTON_UP:
             // Just in case you have need for another button.
-            date_time = watch_rtc_get_date_time();
             switch(state->curr_view) {
                 case DAY_PANCHANG:
                     state->curr_view = RAHU_KALAM;
