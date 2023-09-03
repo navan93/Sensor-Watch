@@ -130,9 +130,9 @@ bool moonrise_moonset_face_loop(movement_event_t event, movement_settings_t *set
             break;
         case EVENT_TICK:
             // If needed, update your display here.
-            if(splash_tick<2)
+            if(splash_tick<1)
                 splash_tick++;
-            else if(splash_tick == 2) {
+            else if(splash_tick == 1) {
                 find_moon_rise_set(settings, context);
                 watch_display_string(disp_buf, 0);
                 watch_set_colon();
