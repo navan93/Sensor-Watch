@@ -29,7 +29,7 @@
 #include "watch.h"
 
 #define MILK_LOGGING_NUM_DATA_POINTS (31)
-#define OUTSTANDING_AMOUnT_VIEW_TIMEOUT  (3)
+#define OUTSTANDING_AMOUNT_VIEW_TIMEOUT  (3)
 
 // typedef struct {
 //     watch_date_time timestamp;

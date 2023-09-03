@@ -26,6 +26,8 @@
 #include <string.h>
 #include "milk_log_face.h"
 #include <math.h>
+#include "filesystem.h"
+
 
 /*
     UI Notes
@@ -63,6 +65,13 @@ static void _milk_log_face_update_display(movement_settings_t *settings, milk_lo
     watch_display_string(buf, 0);
 }
 
+static void _milk_log_face_update_consumption(milk_log_state_t *logger_state, float new_val) {
+    if(logger_state->consumption != new_val) {
+        logger_state->consumption = new_val;
+        filesystem_write_file("milklog", (char*)&logger_state->consumption, sizeof(logger_state->consumption));
+    }
+}
+
 /*Public Functions*/
 void milk_log_face_setup(movement_settings_t *settings, uint8_t watch_face_index, void ** context_ptr) {
     (void) settings;
@@ -70,7 +79,14 @@ void milk_log_face_setup(movement_settings_t *settings, uint8_t watch_face_index
     if (*context_ptr == NULL) {
         *context_ptr = malloc(sizeof(milk_log_state_t));
         memset(*context_ptr, 0, sizeof(milk_log_state_t));
+        milk_log_state_t *logger_state = (milk_log_state_t *)*context_ptr;
         // Do any one-time tasks in here; the inside of this conditional happens only at boot.
+        if (filesystem_get_file_size("milklog") != sizeof(logger_state->consumption)) {
+            filesystem_write_file("milklog", (char*)&logger_state->consumption, sizeof(logger_state->consumption));
+        } else {
+            filesystem_read_file("milklog", (char*)&logger_state->consumption, sizeof(logger_state->consumption));
+        }
+            // No previous ini or old version of ini file - create new config file
     }
     // Do any pin or peripheral setup here; this will be called whenever the watch wakes from deep sleep.
 }
@@ -101,7 +117,8 @@ bool milk_log_face_loop(movement_event_t event, movement_settings_t *settings, v
             break;
         case EVENT_MODE_BUTTON_UP:
             if(logger_state->curr_view == LOG_ENTRY_VIEW) {
-                logger_state->consumption += logger_state->new_log_entry;
+                // logger_state->consumption += logger_state->new_log_entry;
+                _milk_log_face_update_consumption(logger_state, logger_state->consumption + logger_state->new_log_entry);
                 logger_state->new_log_entry = 0.0f;
                 logger_state->curr_view = SUMMARY_VIEW;
                 _milk_log_face_update_display(settings, logger_state);
@@ -116,7 +133,7 @@ bool milk_log_face_loop(movement_event_t event, movement_settings_t *settings, v
         case EVENT_LIGHT_BUTTON_DOWN:
             // Briefly show the amount from the summary view
             if(logger_state->curr_view == SUMMARY_VIEW) {
-                logger_state->ts_ticks = OUTSTANDING_AMOUnT_VIEW_TIMEOUT;
+                logger_state->ts_ticks = OUTSTANDING_AMOUNT_VIEW_TIMEOUT;
                 logger_state->curr_view = OUTSTANDING_AMT_VIEW;
                 _milk_log_face_update_display(settings, logger_state);
             }
@@ -129,7 +146,8 @@ bool milk_log_face_loop(movement_event_t event, movement_settings_t *settings, v
             break;
         case EVENT_ALARM_LONG_PRESS:
             if(logger_state->curr_view == LOG_ENTRY_VIEW) {
-                logger_state->consumption = 0;
+                // logger_state->consumption = 0;
+                _milk_log_face_update_consumption(logger_state, 0);
                 logger_state->curr_view = SUMMARY_VIEW;
             }
             else {
