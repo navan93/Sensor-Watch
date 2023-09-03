@@ -26,20 +26,23 @@
 #include <math.h>
 #include "moonriset.h"
 #include <stdlib.h>
+#include "astrolib.h"
+#include "watch_utility.h"
+
 
 #define K1 15*(M_PI/180)*1.0027379
 
 static MoonRise *moon_info;
 
 struct skyCoordinates {
-  double RA;		    // Right ascension
+  double right_ascension;		    // Right ascension
   double declination;	    // Declination
   double distance;	    // Distance
 };
 
 void testMoonRiseSet(int i, double offsetDays, double latitude, double longitude,
-			 struct skyCoordinates *mp);
-struct skyCoordinates moon(double dayOffset);
+			 astro_equatorial_coordinates_t *mp);
+astro_equatorial_coordinates_t moon(double dayOffset);
 double interpolate(double f0, double f1, double f2, double p);
 double julianDate(time_t t);
 double localSiderealTime(double offsetDays, double longitude);
@@ -53,40 +56,49 @@ void initClass();
 // We look for events from MR_WINDOW/2 hours in the past to MR_WINDOW/2 hours
 // in the future.
 void
-calculate(double latitude, double longitude, time_t t) {
-  struct skyCoordinates moonPosition[3];
+calculate(double latitude, double longitude, time_t timestamp) {
+   astro_equatorial_coordinates_t moonPosition[3];
   double offsetDays;
 
 //   initClass();
-  moon_info->queryTime = t;
-  offsetDays = julianDate(t) - 2451545L;     // Days since Jan 1, 2000, 1200UTC.
+  moon_info->queryTime = timestamp;
+  // offsetDays = julianDate(t) - 2451545L;     // Days since Jan 1, 2000, 1200UTC.
+  offsetDays = julianDate(timestamp);     // Its being done inside astro_get_ra_dec.
   // Begin testing (MR_WINDOW / 2) hours before requested time.
 //   offsetDays -= (double)MR_WINDOW / (2 * 24) ;
 
+  watch_date_time date_time = watch_utility_date_time_from_unix_time(timestamp, 0);
+  double jd = astro_convert_date_to_julian_date(date_time.unit.year + WATCH_RTC_REFERENCE_YEAR, date_time.unit.month, date_time.unit.day, date_time.unit.hour, date_time.unit.minute, date_time.unit.second);
   // Calculate coordinates at start, middle, and end of search period.
   for (int i = 0; i < 3; i++) {
-    moonPosition[i] = moon(offsetDays + i * (double)MR_WINDOW / (2 * 24));
+    // moonPosition[i] = moon(offsetDays + i * (double)MR_WINDOW / (2 * 24));
+    moonPosition[i] = astro_get_ra_dec(offsetDays + i * (double)MR_WINDOW / (2 * 24),
+      ASTRO_BODY_MOON,
+      latitude,
+      longitude,
+      false
+    );
   }
 
-  // If the RA wraps around during this period, unwrap it to keep the
+  // If the right_ascension wraps around during this period, unwrap it to keep the
   // sequence smooth for interpolation.
-  if (moonPosition[1].RA <= moonPosition[0].RA)
-    moonPosition[1].RA += 2 * M_PI;
-  if (moonPosition[2].RA <= moonPosition[1].RA)
-    moonPosition[2].RA += 2 * M_PI;
+  if (moonPosition[1].right_ascension <= moonPosition[0].right_ascension)
+    moonPosition[1].right_ascension += 2 * M_PI;
+  if (moonPosition[2].right_ascension <= moonPosition[1].right_ascension)
+    moonPosition[2].right_ascension += 2 * M_PI;
 
   // Initialize interpolation array.
-  struct skyCoordinates mpWindow[3];
-  mpWindow[0].RA  = moonPosition[0].RA;
+  astro_equatorial_coordinates_t mpWindow[3];
+  mpWindow[0].right_ascension  = moonPosition[0].right_ascension;
   mpWindow[0].declination = moonPosition[0].declination;
   mpWindow[0].distance = moonPosition[0].distance;
 
   for (int k = 0; k < MR_WINDOW; k++) {	    // Check each interval of search period
     float ph = (float)(k + 1)/MR_WINDOW;
 
-    mpWindow[2].RA = interpolate(moonPosition[0].RA,
-				 moonPosition[1].RA,
-				 moonPosition[2].RA, ph);
+    mpWindow[2].right_ascension = interpolate(moonPosition[0].right_ascension,
+				 moonPosition[1].right_ascension,
+				 moonPosition[2].right_ascension, ph);
     mpWindow[2].declination = interpolate(moonPosition[0].declination,
 					  moonPosition[1].declination,
 					  moonPosition[2].declination, ph);
@@ -102,7 +114,7 @@ calculate(double latitude, double longitude, time_t t) {
 // Look for moon rise and set events during an hour.
 void
 testMoonRiseSet(int k, double offsetDays, double latitude, double longitude,
-			  struct skyCoordinates *mp) {
+			  astro_equatorial_coordinates_t *mp) {
   double ha[3], VHz[3];
   double lSideTime;
 
@@ -110,8 +122,8 @@ testMoonRiseSet(int k, double offsetDays, double latitude, double longitude,
   lSideTime = localSiderealTime(offsetDays, longitude) * 2* M_PI / 360;
 
   // Calculate Hour Angle.
-  ha[0] = lSideTime - mp[0].RA + k*K1;
-  ha[2] = lSideTime - mp[2].RA + k*K1 + K1;
+  ha[0] = lSideTime - mp[0].right_ascension + k*K1;
+  ha[2] = lSideTime - mp[2].right_ascension + k*K1 + K1;
 
   // Hour Angle and declination at half hour.
   ha[1]  = (ha[2] + ha[0])/2;
@@ -217,7 +229,7 @@ noevent:
 
 // Moon position using fundamental arguments
 // (Van Flandern & Pulkkinen, 1979)
-struct skyCoordinates
+astro_equatorial_coordinates_t
 moon(double dayOffset) {
   double l = 0.606434 + 0.03660110129 * dayOffset;
   double m = 0.374897 + 0.03629164709 * dayOffset;
@@ -273,9 +285,9 @@ moon(double dayOffset) {
     - 0.00092 * sin(2*m - 2*d);
 
   double s;
-  struct skyCoordinates sc;
+  astro_equatorial_coordinates_t sc;
   s = w / sqrt(u - v*v);
-  sc.RA = l + atan(s / sqrt(1 - s*s));		      // Right ascension
+  sc.right_ascension = l + atan(s / sqrt(1 - s*s));		      // Right ascension
 
   s = v / sqrt(u);
   sc.declination = atan(s / sqrt(1 - s*s));	      // Declination

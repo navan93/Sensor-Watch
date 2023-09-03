@@ -56,6 +56,7 @@ CFLAGS += --std=gnu99 -Os
 CFLAGS += -fno-diagnostics-show-caret
 CFLAGS += -fdata-sections -ffunction-sections
 CFLAGS += -funsigned-char -funsigned-bitfields
+CFLAGS += -fdebug-prefix-map=/= -g
 CFLAGS += -mcpu=cortex-m0plus -mthumb
 CFLAGS += -MD -MP -MT $(BUILD)/$(*F).o -MF $(BUILD)/$(@F).d
 
