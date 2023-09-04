@@ -7,6 +7,7 @@
 
 // Use https://cryptii.com/pipes/base32-to-hex to convert base32 to hex
 // Use https://github.com/susam/mintotp to generate test codes for verification
+// Use bash to convert to hex: echo "W4FOYVEWJH5GDIJT" | base32 -d | xxd -i
 // Available algorothms:
 // SHA1 (most TOTP codes use this)
 // SHA224
@@ -16,7 +17,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // Enter your TOTP key data below
-static const uint8_t num_keys = 2;
+static const uint8_t num_keys = 4;
 // static uint8_t keys[] = {
 //     0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x21, 0xde, 0xad, 0xbe, 0xef, // 1 - JBSWY3DPEHPK3PXP
 //     0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x21, 0xde, 0xad, 0xbe, 0xef, // 2 - JBSWY3DPEHPK3PXP
@@ -25,16 +26,24 @@ static const uint8_t num_keys = 2;
 static const uint8_t key_sizes[] = {
     20,
     10,
+    10,
+    10,
 };
 static const uint32_t timesteps[] = {
+    30,
+    30,
     30,
     30,
 };
 static const char labels[][2] = {
     { 'H', 'A' },
     { 'G', 'H' },
+    { 'S', 'F' },
+    { 'O', 'A' },
 };
 static const hmac_alg algorithms[] = {
+    SHA1,
+    SHA1,
     SHA1,
     SHA1,
 };
