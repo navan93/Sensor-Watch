@@ -4,3 +4,9 @@
 [submodule "littlefs"]
 	path = littlefs
 	url = https://github.com/littlefs-project/littlefs.git
+[submodule "PCB/KiCad-Libs/kicad-symbols"]
+	path = PCB/KiCad-Libs/kicad-symbols
+	url = git@gitlab.com:navan93/kicad-symbols.git
+[submodule "PCB/KiCad-Libs/kicad-footprints"]
+	path = PCB/KiCad-Libs/kicad-footprints
+	url = git@gitlab.com:navan93/kicad-footprints.git
