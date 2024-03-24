@@ -121,6 +121,7 @@ SRCS += \
   $(TOP)/watch-library/hardware/watch/watch_storage.c \
   $(TOP)/watch-library/hardware/watch/watch_deepsleep.c \
   $(TOP)/watch-library/hardware/watch/watch_private.c \
+  $(TOP)/watch-library/hardware/watch/watch_private_cdc.c \
   $(TOP)/watch-library/hardware/watch/watch.c \
   $(TOP)/watch-library/hardware/hal/src/hal_atomic.c \
   $(TOP)/watch-library/hardware/hal/src/hal_delay.c \
@@ -208,7 +209,15 @@ ifeq ($(LED), BLUE)
 CFLAGS += -DWATCH_IS_BLUE_BOARD
 endif
 
-ifeq ($(LED), RED)
+ifndef COLOR
+$(error Set the COLOR variable to RED, BLUE, or GREEN depending on what board you have.)
+endif
+
+ifeq ($(COLOR), BLUE)
+CFLAGS += -DWATCH_IS_BLUE_BOARD
+endif
+
+ifeq ($(COLOR), RED)
 CFLAGS += -DWATCH_INVERT_LED_POLARITY
 CFLAGS += -DNO_FREQCORR
 endif
@@ -220,4 +229,10 @@ endif
 
 ifeq ($(BOARD), OSO-FEAL-A1-00)
 CFLAGS += -DCRYSTALLESS
+endif
+
+# Build options to customize movement and faces
+
+ifdef CLOCK_FACE_24H_ONLY
+CFLAGS += -DCLOCK_FACE_24H_ONLY
 endif

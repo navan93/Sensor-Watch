@@ -53,7 +53,10 @@ SRCS += \
   ../../littlefs/lfs_util.c \
   ../movement.c \
   ../filesystem.c \
+  ../shell.c \
+  ../shell_cmd_list.c \
   ../watch_faces/clock/simple_clock_face.c \
+  ../watch_faces/clock/clock_face.c \
   ../watch_faces/clock/world_clock_face.c \
   ../watch_faces/clock/beats_face.c \
   ../watch_faces/clock/weeknumber_clock_face.c \
@@ -122,6 +125,14 @@ SRCS += \
   ../watch_faces/complication/flashlight_face.c \
   ../watch_faces/clock/decimal_time_face.c \
   ../watch_faces/clock/wyoscan_face.c \
+  ../watch_faces/settings/save_load_face.c \
+  ../watch_faces/clock/day_night_percentage_face.c \
+  ../watch_faces/complication/simple_coin_flip_face.c \
+  ../watch_faces/complication/solstice_face.c \
+  ../watch_faces/complication/couch_to_5k_face.c \
+  ../watch_faces/clock/minute_repeater_decimal_face.c \
+  ../watch_faces/complication/tuning_tones_face.c \
+  ../watch_faces/complication/kitchen_conversions_face.c \
   ../watch_faces/complication/milk_log_face.c \
   ../watch_faces/complication/panchang_face.c \
   ../watch_faces/complication/moonrise_moonset_face.c \
