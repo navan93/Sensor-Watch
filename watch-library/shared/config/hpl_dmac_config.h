@@ -107,7 +107,7 @@
 // <i> Defines the memory priority access during the data transfer operation
 // <id> dmac_dqos
 #ifndef CONF_DMAC_DQOS
-#define CONF_DMAC_DQOS 0
+#define CONF_DMAC_DQOS 3
 #endif
 
 // <o> Fetch Quality of Service

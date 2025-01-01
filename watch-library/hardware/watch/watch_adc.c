@@ -99,13 +99,13 @@ void watch_enable_adc_dma(void) {
     if (USB->DEVICE.CTRLA.bit.ENABLE) {
         // if USB is enabled, we are running an 8 MHz clock.
         // divide by 16 for a 500kHz ADC clock.
-        ADC->CTRLB.bit.PRESCALER = ADC_CTRLB_PRESCALER_DIV16_Val;
+        ADC->CTRLB.bit.PRESCALER = ADC_CTRLB_PRESCALER_DIV2_Val;
     } else {
         // otherwise it's 4 Mhz. divide by 8 for a 500kHz ADC clock.
-        ADC->CTRLB.bit.PRESCALER = ADC_CTRLB_PRESCALER_DIV8_Val;
+        ADC->CTRLB.bit.PRESCALER = ADC_CTRLB_PRESCALER_DIV2_Val;
     }
     ADC->CALIB.reg = calib_reg;
-    ADC->REFCTRL.bit.REFSEL = ADC_REFCTRL_REFSEL_INTVCC2_Val;
+    ADC->REFCTRL.bit.REFSEL = ADC_REFCTRL_REFSEL_INTVCC1_Val;
     ADC->INPUTCTRL.bit.MUXNEG = ADC_INPUTCTRL_MUXNEG_GND_Val;
     ADC->CTRLC.bit.RESSEL = ADC_CTRLC_RESSEL_8BIT_Val;
     ADC->AVGCTRL.bit.SAMPLENUM = ADC_AVGCTRL_SAMPLENUM_1_Val;   // No averaging

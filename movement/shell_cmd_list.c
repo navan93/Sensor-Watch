@@ -39,6 +39,7 @@ static int help_cmd(int argc, char *argv[]);
 static int adc_cmd(int argc, char *argv[]);
 static int flash_cmd(int argc, char *argv[]);
 static int stress_cmd(int argc, char *argv[]);
+static int padc_cmd(int argc, char *argv[]);
 
 shell_command_t g_shell_commands[] = {
     {
@@ -118,6 +119,13 @@ shell_command_t g_shell_commands[] = {
         .max_args = 0,
         .cb = adc_cmd,
     },
+    {
+        .name = "padc",
+        .help = "print ADC buffer",
+        .min_args = 0,
+        .max_args = 0,
+        .cb = padc_cmd,
+    },
 };
 
 const size_t g_num_shell_commands = sizeof(g_shell_commands) / sizeof(shell_command_t);
@@ -185,18 +193,18 @@ static int stress_cmd(int argc, char *argv[]) {
    source_address = (uint32_t)(&ADC->RESULT.reg)
 
 */
-static uint8_t m_adc_buffer[150];
+static uint8_t m_adc_buffer[1050];
 
 static void dma_xfer_done(struct _dma_resource *resource)
 {
     (void)resource;
     printf("DMA Transfer completed\r\n");
     adc_stop();
-    // printf("ADC value on A4: %d\r\n", value);
-    printf("ADC Buffer:");
-    for (uint16_t i = 0; i < sizeof(m_adc_buffer); i++) {
-        printf("%d ", m_adc_buffer[i]);
-    }
+    delay_ms(100);
+    // printf("ADC Buffer:");
+    // for (uint16_t i = 0; i < sizeof(m_adc_buffer); i++) {
+    //     printf("%d ", m_adc_buffer[i]);
+    // }
 }
 static void dma_init(void)
 {
@@ -207,7 +215,7 @@ static void dma_init(void)
     _dma_srcinc_enable(0, false);
     _dma_set_destination_address(0, (void*)m_adc_buffer);
     _dma_dstinc_enable(0, true);
-    _dma_set_data_amount(0, 100);
+    _dma_set_data_amount(0, 1000);
     _dma_set_irq_state(0, DMA_TRANSFER_COMPLETE_CB, true);
     _dma_get_channel_resource(&ch0_resource, 0);
     ch0_resource->dma_cb.transfer_done = dma_xfer_done;
@@ -230,14 +238,21 @@ static int adc_cmd(int argc, char *argv[]) {
     // Configure DMA
     dma_init();
 
-    // get the sense pin level
-    // uint16_t value = watch_get_analog_pin_level(NO_RADIO_RX_PIN);
+    // start ADC sampling
     adc_start(NO_RADIO_RX_PIN);
 
-    // printf("ADC value on A4: %d\r\n", value);
-    // printf("ADC Buffer:");
-    // for (uint16_t i = 0; i < sizeof(m_adc_buffer); i++) {
-    //     printf("%d ", m_adc_buffer[i]);
-    // }
     return 0;
+}
+
+static int padc_cmd(int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
+
+    printf("ADC Buffer:");
+    for (uint16_t i = 0; i < sizeof(m_adc_buffer); i++) {
+        printf("%d ", m_adc_buffer[i]);
+    }
+
+    return 0;
+
 }
