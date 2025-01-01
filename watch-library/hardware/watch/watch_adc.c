@@ -79,6 +79,44 @@ void watch_enable_adc(void) {
     _watch_get_analog_value(ADC_INPUTCTRL_MUXPOS_SCALEDCOREVCC);
 }
 
+void watch_enable_adc_dma(void) {
+    MCLK->APBCMASK.reg |= MCLK_APBCMASK_ADC;
+    GCLK->PCHCTRL[ADC_GCLK_ID].reg = GCLK_PCHCTRL_GEN_GCLK0 | GCLK_PCHCTRL_CHEN;
+
+    uint16_t calib_reg = 0;
+    calib_reg = ADC_CALIB_BIASREFBUF((*(uint32_t *)ADC_FUSES_BIASREFBUF_ADDR >> ADC_FUSES_BIASREFBUF_Pos)) |
+                ADC_CALIB_BIASCOMP((*(uint32_t *)ADC_FUSES_BIASCOMP_ADDR >> ADC_FUSES_BIASCOMP_Pos));
+
+    if (!ADC->SYNCBUSY.bit.SWRST) {
+        if (ADC->CTRLA.bit.ENABLE) {
+            ADC->CTRLA.bit.ENABLE = 0;
+            _watch_sync_adc();
+        }
+        ADC->CTRLA.bit.SWRST = 1;
+    }
+    _watch_sync_adc();
+
+    if (USB->DEVICE.CTRLA.bit.ENABLE) {
+        // if USB is enabled, we are running an 8 MHz clock.
+        // divide by 16 for a 500kHz ADC clock.
+        ADC->CTRLB.bit.PRESCALER = ADC_CTRLB_PRESCALER_DIV16_Val;
+    } else {
+        // otherwise it's 4 Mhz. divide by 8 for a 500kHz ADC clock.
+        ADC->CTRLB.bit.PRESCALER = ADC_CTRLB_PRESCALER_DIV8_Val;
+    }
+    ADC->CALIB.reg = calib_reg;
+    ADC->REFCTRL.bit.REFSEL = ADC_REFCTRL_REFSEL_INTVCC2_Val;
+    ADC->INPUTCTRL.bit.MUXNEG = ADC_INPUTCTRL_MUXNEG_GND_Val;
+    ADC->CTRLC.bit.RESSEL = ADC_CTRLC_RESSEL_8BIT_Val;
+    ADC->AVGCTRL.bit.SAMPLENUM = ADC_AVGCTRL_SAMPLENUM_1_Val;   // No averaging
+    ADC->SAMPCTRL.bit.SAMPLEN = 0;
+    ADC->INTENSET.reg = ADC_INTENSET_RESRDY;
+    ADC->CTRLA.bit.ENABLE = 1;
+    _watch_sync_adc();
+    // throw away one measurement after reference change (the channel doesn't matter).
+    _watch_get_analog_value(ADC_INPUTCTRL_MUXPOS_SCALEDCOREVCC);
+}
+
 void watch_enable_analog_input(const uint8_t pin) {
     gpio_set_pin_direction(pin, GPIO_DIRECTION_OFF);
     switch (pin) {
@@ -196,4 +234,47 @@ inline void watch_disable_adc(void) {
     _watch_sync_adc();
 
     MCLK->APBCMASK.reg &= ~MCLK_APBCMASK_ADC;
+}
+
+void adc_start(const uint8_t pin) {
+    uint16_t channel;
+    switch (pin) {
+        case A0:
+            channel = (ADC_INPUTCTRL_MUXPOS_AIN12_Val);
+            break;
+        case A1:
+            channel = (ADC_INPUTCTRL_MUXPOS_AIN9_Val);
+            break;
+        case A2:
+            channel = (ADC_INPUTCTRL_MUXPOS_AIN10_Val);
+            break;
+        case A3:
+            channel = (ADC_INPUTCTRL_MUXPOS_AIN11_Val);
+            break;
+        case A4:
+            channel = (ADC_INPUTCTRL_MUXPOS_AIN8_Val);
+            break;
+        default:
+            return;
+    }
+    if (ADC->INPUTCTRL.bit.MUXPOS != channel) {
+        ADC->INPUTCTRL.bit.MUXPOS = channel;
+        _watch_sync_adc();
+    }
+
+    hri_adc_set_CTRLC_FREERUN_bit(ADC); //1: Free running mode
+    // Start ADC by enabling conversion
+    ADC->SWTRIG.reg = ADC_SWTRIG_START;
+    while (ADC->SYNCBUSY.reg & ADC_SYNCBUSY_ENABLE) {
+        // Wait for the ADC to be ready
+    }
+}
+
+void adc_stop(void) {
+    hri_adc_clear_CTRLC_FREERUN_bit(ADC);   //Set back to single conversion mode
+    // Disable the ADC to stop conversion
+    ADC->CTRLA.reg &= ~ADC_CTRLA_ENABLE;
+    while (ADC->SYNCBUSY.reg & ADC_SYNCBUSY_ENABLE) {
+        // Wait for disable sync
+    }
 }

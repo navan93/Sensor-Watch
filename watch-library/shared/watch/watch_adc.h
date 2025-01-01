@@ -38,6 +38,17 @@
   */
 void watch_enable_adc(void);
 
+/** @addtogroup adc Analog Input
+  * @brief This section covers functions related to the SAM L22's analog-to-digital converter,
+  *        as well as configuring and reading values from the five analog-capable pins on the
+  *        9-pin connector. This also configures the DMA to store converted samples to a buffer.
+  */
+/// @{
+/** @brief Enables the ADC peripheral. You must call this before attempting to read a value
+  *        from an analog pin.
+  */
+void watch_enable_adc_dma(void);
+
 /** @brief Configures the selected pin for analog input.
   * @param pin One of pins A0-A4.
   */
@@ -152,6 +163,9 @@ void watch_disable_analog_input(const uint8_t pin);
   *       parameters, you will need to set them up again.
   **/
 void watch_disable_adc(void);
+
+void adc_start(const uint8_t pin);
+void adc_stop(void);
 
 /// @}
 #endif
