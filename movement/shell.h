@@ -25,6 +25,24 @@
 #ifndef SHELL_H_
 #define SHELL_H_
 
+#include "shell_backend.h"
+
+/** @brief Initialize the shell system and register backends.
+ *         This should be called once during system initialization.
+ */
+void shell_init(void);
+
+/** @brief Set the active shell backend.
+ *  @param backend_type The backend type to activate
+ *  @return true if backend was successfully activated
+ */
+bool shell_set_backend(shell_backend_type_t backend_type);
+
+/** @brief Get the currently active backend type.
+ *  @return The active backend type
+ */
+shell_backend_type_t shell_get_backend(void);
+
 /** @brief Called periodically from the app loop to handle shell commands.
  *         When a full command is complete, parses and executes its matching
  *         callback.

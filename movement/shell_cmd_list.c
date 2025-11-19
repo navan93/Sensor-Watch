@@ -34,6 +34,10 @@
 static int help_cmd(int argc, char *argv[]);
 static int flash_cmd(int argc, char *argv[]);
 static int stress_cmd(int argc, char *argv[]);
+static int settime_cmd(int argc, char *argv[]);
+static int gettime_cmd(int argc, char *argv[]);
+extern int shell_cmd_backend_status(int argc, char *argv[]);
+extern int shell_cmd_backend_switch(int argc, char *argv[]);
 
 shell_command_t g_shell_commands[] = {
     {
@@ -106,6 +110,34 @@ shell_command_t g_shell_commands[] = {
         .max_args = 2,
         .cb = stress_cmd,
     },
+    {
+        .name = "settime",
+        .help = "set RTC time",
+        .min_args = 6,
+        .max_args = 6,
+        .cb = settime_cmd,
+    },
+    {
+        .name = "gettime",
+        .help = "get RTC time",
+        .min_args = 0,
+        .max_args = 0,
+        .cb = gettime_cmd,
+    },
+    {
+        .name = "backend",
+        .help = "show current shell backend status",
+        .min_args = 0,
+        .max_args = 0,
+        .cb = shell_cmd_backend_status,
+    },
+    {
+        .name = "switch",
+        .help = "usage: switch <usb|uart> - switch shell backend",
+        .min_args = 1,
+        .max_args = 1,
+        .cb = shell_cmd_backend_switch,
+    },
 };
 
 const size_t g_num_shell_commands = sizeof(g_shell_commands) / sizeof(shell_command_t);
@@ -161,5 +193,40 @@ static int stress_cmd(int argc, char *argv[]) {
         }
     }
 
+    return 0;
+}
+
+static int settime_cmd(int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
+    watch_date_time date_time;
+
+    if (argc != 4) {
+        return -1;
+    }
+    date_time.unit.year = atoi(argv[1]);
+    date_time.unit.month = atoi(argv[2]);
+    date_time.unit.day = atoi(argv[3]);
+    date_time.unit.hour = atoi(argv[4]);
+    date_time.unit.minute = atoi(argv[5]);
+    date_time.unit.second = atoi(argv[6]);
+
+    watch_rtc_set_date_time(date_time);
+    return 0;
+}
+
+static int gettime_cmd(int argc, char *argv[]) {
+    (void) argc;
+    (void) argv;
+    watch_date_time date_time;
+
+    date_time = watch_rtc_get_date_time();
+    printf("%u-%u-%u %u:%u:%u\r\n",
+            date_time.unit.year,
+            date_time.unit.month,
+            date_time.unit.day,
+            date_time.unit.hour,
+            date_time.unit.minute,
+            date_time.unit.second);
     return 0;
 }

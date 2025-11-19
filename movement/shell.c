@@ -38,9 +38,17 @@
 
 #include "watch.h"
 #include "shell_cmd_list.h"
+#include "shell_backend.h"
+#include "shell_config.h"
 
 extern shell_command_t g_shell_commands[];
 extern const size_t g_num_shell_commands;
+
+// Forward declarations for backend registration
+extern void shell_backend_usb_register(void);
+extern void shell_backend_uart_register(void);
+
+static bool s_shell_initialized = false;
 
 #define NEWLINE  "\r\n"
 
@@ -132,16 +140,29 @@ static int prv_handle_command() {
             if (((argc - 1) < g_shell_commands[i].min_args) ||
                 ((argc - 1) > g_shell_commands[i].max_args)) {
                 if (g_shell_commands[i].help != NULL) {
-                    printf(NEWLINE "%s" NEWLINE, g_shell_commands[i].help);
+                    shell_backend_putchar('\r');
+                    shell_backend_putchar('\n');
+                    for (const char *p = g_shell_commands[i].help; *p; p++) {
+                        shell_backend_putchar(*p);
+                    }
+                    shell_backend_putchar('\r');
+                    shell_backend_putchar('\n');
                 }
                 return -2;
             }
             // Call the command's callback
             if (g_shell_commands[i].cb != NULL) {
-                printf(NEWLINE);
+                shell_backend_putchar('\r');
+                shell_backend_putchar('\n');
                 int ret = g_shell_commands[i].cb(argc, argv);
                 if (ret == -2) {
-                    printf(NEWLINE "%s" NEWLINE, g_shell_commands[i].help);
+                    shell_backend_putchar('\r');
+                    shell_backend_putchar('\n');
+                    for (const char *p = g_shell_commands[i].help; *p; p++) {
+                        shell_backend_putchar(*p);
+                    }
+                    shell_backend_putchar('\r');
+                    shell_backend_putchar('\n');
                 }
                 return ret;
             }
@@ -149,6 +170,54 @@ static int prv_handle_command() {
     }
 
     return -1;
+}
+
+void shell_init(void) {
+    if (s_shell_initialized) {
+        return;
+    }
+
+    // Register all available backends
+    shell_backend_usb_register();
+    shell_backend_uart_register();
+
+    // Initialize the backend system
+    shell_backend_init();
+
+    // Set default backend based on configuration and availability
+#if SHELL_AUTO_SWITCH_BACKEND
+    // Auto-switch based on what's available, with preference
+    if (SHELL_PREFERRED_BACKEND == SHELL_BACKEND_USB_CDC && watch_is_usb_enabled()) {
+        shell_backend_set_active(SHELL_BACKEND_USB_CDC);
+    } else if (SHELL_PREFERRED_BACKEND == SHELL_BACKEND_UART) {
+        shell_backend_set_active(SHELL_BACKEND_UART);
+    } else if (watch_is_usb_enabled()) {
+        shell_backend_set_active(SHELL_BACKEND_USB_CDC);
+    } else {
+        shell_backend_set_active(SHELL_BACKEND_UART);
+    }
+#else
+    // Use the preferred backend regardless of availability
+    shell_backend_set_active(SHELL_PREFERRED_BACKEND);
+#endif
+
+    s_shell_initialized = true;
+}
+
+bool shell_set_backend(shell_backend_type_t backend_type) {
+    if (!s_shell_initialized) {
+        shell_init();
+    }
+
+    return shell_backend_set_active(backend_type);
+}
+
+shell_backend_type_t shell_get_backend(void) {
+    if (!s_shell_initialized) {
+        shell_init();
+    }
+
+    return shell_backend_get_active();
 }
 
 void shell_task(void) {
@@ -174,16 +243,29 @@ void shell_task(void) {
         tx = "";
     });
 #else
+    // Check if any backend is available
+    if (!shell_backend_is_available()) {
+        return;
+    }
+
     // Read one character at a time until we run out.
     while (true) {
         if (s_buf_len >= (SHELL_BUF_SZ - 1)) {
-            printf(NEWLINE "Command too long, clearing.");
-            printf(NEWLINE SHELL_PROMPT);
+            shell_backend_putchar('\r');
+            shell_backend_putchar('\n');
+            for (const char *p = "Command too long, clearing."; *p; p++) {
+                shell_backend_putchar(*p);
+            }
+            shell_backend_putchar('\r');
+            shell_backend_putchar('\n');
+            for (const char *p = SHELL_PROMPT; *p; p++) {
+                shell_backend_putchar(*p);
+            }
             s_buf_len = 0;
             break;
         }
 
-        int c = getchar();
+        int c = shell_backend_getchar();
 
         if (c < 0) {
             // Nothing left to read, we're done.
@@ -195,13 +277,15 @@ void shell_task(void) {
             // We need to emit a backspace, overwrite the character on the
             // screen with a space, and then backspace again to move the cursor.
             if (s_buf_len > 0) {
-                printf("\b \b");
+                shell_backend_putchar('\b');
+                shell_backend_putchar(' ');
+                shell_backend_putchar('\b');
                 s_buf_len--;
             }
             continue;
         } else if (c != '\n' && c != '\r') {
             // Print regular characters to the screen.
-            putchar(c);
+            shell_backend_putchar(c);
         }
 
         s_buf[s_buf_len] = c;
@@ -211,7 +295,11 @@ void shell_task(void) {
             s_buf[s_buf_len+1] = '\0';
             (void) prv_handle_command();
             s_buf_len = 0;
-            printf(NEWLINE SHELL_PROMPT);
+            shell_backend_putchar('\r');
+            shell_backend_putchar('\n');
+            for (const char *p = SHELL_PROMPT; *p; p++) {
+                shell_backend_putchar(*p);
+            }
             break;
         } else {
             s_buf_len++;

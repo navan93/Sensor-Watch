@@ -441,6 +441,9 @@ void app_setup(void) {
         MOVEMENT_CUSTOM_BOOT_COMMANDS()
         #endif
 
+        // Initialize the shell system
+        shell_init();
+
         for(uint8_t i = 0; i < MOVEMENT_NUM_FACES; i++) {
             watch_face_contexts[i] = NULL;
             scheduled_tasks[i].reg = 0;
@@ -622,10 +625,9 @@ bool app_loop(void) {
         }
     }
 
-    // if we are plugged into USB, handle the serial shell
-    if (watch_is_usb_enabled()) {
-        shell_task();
-    }
+    // Handle the serial shell for any available backend
+    // The shell will automatically use the appropriate backend (USB CDC or UART)
+    shell_task();
 
     event.subsecond = 0;
 
