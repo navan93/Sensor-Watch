@@ -38,6 +38,7 @@ static int settime_cmd(int argc, char *argv[]);
 static int gettime_cmd(int argc, char *argv[]);
 extern int shell_cmd_backend_status(int argc, char *argv[]);
 extern int shell_cmd_backend_switch(int argc, char *argv[]);
+extern int shell_cmd_ble(int argc, char *argv[]);
 
 shell_command_t g_shell_commands[] = {
     {
@@ -137,6 +138,13 @@ shell_command_t g_shell_commands[] = {
         .min_args = 1,
         .max_args = 1,
         .cb = shell_cmd_backend_switch,
+    },
+    {
+        .name = "ble",
+        .help = "usage: ble <ping|on|off|time|bonds|str TEXT|key CODE [MOD]>",
+        .min_args = 1,
+        .max_args = 3,
+        .cb = shell_cmd_ble,
     },
 };
 

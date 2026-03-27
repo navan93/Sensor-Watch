@@ -34,6 +34,7 @@
 #include "filesystem.h"
 #include "movement.h"
 #include "shell.h"
+#include "ble_uart.h"
 
 #ifndef MOVEMENT_FIRMWARE
 #include "movement_config.h"
@@ -443,6 +444,9 @@ void app_setup(void) {
 
         // Initialize the shell system
         shell_init();
+
+        // Initialize the BLE UART TLV driver
+        ble_uart_init();
 
         for(uint8_t i = 0; i < MOVEMENT_NUM_FACES; i++) {
             watch_face_contexts[i] = NULL;

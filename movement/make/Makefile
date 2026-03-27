@@ -51,7 +51,13 @@ SRCS += \
   ../movement.c \
   ../filesystem.c \
   ../shell.c \
+  ../shell_backend.c \
+  ../shell_backend_uart.c \
+  ../shell_backend_usb.c \
+  ../shell_cmd_backend.c \
   ../shell_cmd_list.c \
+  ../ble_uart.c \
+  ../shell_cmd_ble.c \
   ../watch_faces/clock/simple_clock_face.c \
   ../watch_faces/clock/close_enough_clock_face.c \
   ../watch_faces/clock/clock_face.c \
