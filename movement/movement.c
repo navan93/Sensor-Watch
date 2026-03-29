@@ -485,9 +485,11 @@ void app_setup(void) {
 }
 
 void app_prepare_for_standby(void) {
+    ble_uart_deinit();
 }
 
 void app_wake_from_standby(void) {
+    ble_uart_init();
 }
 
 static void _sleep_mode_app_loop(void) {

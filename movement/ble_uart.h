@@ -21,6 +21,9 @@
 /** Initialise the BLE UART (115200 8N1, A2=TX, A1=RX by default). */
 void ble_uart_init(void);
 
+/** Disable the BLE UART to save power before entering standby. */
+void ble_uart_deinit(void);
+
 /**
  * Send a TLV frame to the BLE module.
  * @param type  Command type (BLE_CMD_*)

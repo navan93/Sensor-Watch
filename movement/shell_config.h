@@ -34,7 +34,7 @@
 
 /** @brief Enable UART backend for shell (default: enabled) */
 #ifndef SHELL_ENABLE_UART_BACKEND
-#define SHELL_ENABLE_UART_BACKEND 1
+#define SHELL_ENABLE_UART_BACKEND 0
 #endif
 
 /** @brief Default UART TX pin for shell (default: A2) */

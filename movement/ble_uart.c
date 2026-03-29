@@ -5,23 +5,19 @@
 
 #include "ble_uart.h"
 #include "watch_uart.h"   /* watch_enable_uart(); pulls in watch.h → driver_init.h → SERCOM defs */
+#include "hal_io.h"       /* io_write() / io_descriptor */
 
 /* ---- Pin / baud configuration ---- */
 #ifndef BLE_UART_TX_PIN
-#define BLE_UART_TX_PIN  A2   /* watch→BLE: PB02 ↔ nRF P0.18 */
+#define BLE_UART_TX_PIN  A2   /* watch→BLE: PB02 ↔ nRF P0.16 (nRF RX) */
 #endif
 #ifndef BLE_UART_RX_PIN
-#define BLE_UART_RX_PIN  A1   /* BLE→watch: PB01 ↔ nRF P0.16 */
+#define BLE_UART_RX_PIN  A1   /* BLE→watch: PB01 ↔ nRF P0.18 (nRF TX) */
 #endif
 #define BLE_UART_BAUD    115200
 
-/* ---- Low-level SERCOM3 helpers ---- */
-
-/* Block until the TX data register is empty, then write one byte. */
-static void tx_byte(uint8_t b) {
-    while (!(SERCOM3->USART.INTFLAG.reg & SERCOM_USART_INTFLAG_DRE));
-    SERCOM3->USART.DATA.reg = b;
-}
+/* TX uses the same ASF4 io path as watch_uart_puts(), but binary-safe (no strlen). */
+extern struct io_descriptor *uart_io;
 
 /* Non-blocking: true when a received byte is waiting in the shift register. */
 static bool rx_ready(void) {
@@ -49,23 +45,51 @@ static uint8_t      s_pending_type;
 static uint8_t      s_pending_data[BLE_TLV_MAX_LEN];
 static uint8_t      s_pending_len;
 
+static bool         s_uart_enabled;
+
 /* ---- Public API ---- */
 
 void ble_uart_init(void) {
+    if (s_uart_enabled) return;
     watch_enable_uart(BLE_UART_TX_PIN, BLE_UART_RX_PIN, BLE_UART_BAUD);
-    s_state       = TLV_TYPE;
-    s_frame_ready = false;
+    s_state        = TLV_TYPE;
+    s_frame_ready  = false;
+    s_uart_enabled = true;
+}
+
+void ble_uart_deinit(void) {
+    if (!s_uart_enabled) return;
+
+    /* Wait for any in-progress transmission to complete */
+    while (!(SERCOM3->USART.INTFLAG.reg & SERCOM_USART_INTFLAG_TXC));
+
+    /* Disable the SERCOM3 peripheral and wait for sync */
+    SERCOM3->USART.CTRLA.reg &= ~SERCOM_USART_CTRLA_ENABLE;
+    while (SERCOM3->USART.SYNCBUSY.reg & SERCOM_USART_SYNCBUSY_ENABLE);
+
+    /* Gate off the SERCOM3 bus clock */
+    MCLK->APBCMASK.reg &= ~MCLK_APBCMASK_SERCOM3;
+
+    /* Return pins to high-impedance inputs to prevent current leakage */
+    gpio_set_pin_function(BLE_UART_TX_PIN, GPIO_PIN_FUNCTION_OFF);
+    gpio_set_pin_function(BLE_UART_RX_PIN, GPIO_PIN_FUNCTION_OFF);
+
+    s_uart_enabled = false;
+    s_state        = TLV_TYPE;
+    s_frame_ready  = false;
 }
 
 void ble_uart_send(uint8_t type, const uint8_t *data, uint8_t len) {
-    tx_byte(type);
-    tx_byte(len);
-    for (uint8_t i = 0; i < len; i++) {
-        tx_byte(data[i]);
-    }
+    if (!s_uart_enabled) return;
+    uint8_t frame[2 + BLE_TLV_MAX_LEN];
+    frame[0] = type;
+    frame[1] = len;
+    for (uint8_t i = 0; i < len; i++) frame[2 + i] = data[i];
+    io_write(uart_io, frame, 2 + len);
 }
 
 bool ble_uart_task(uint8_t *type_out, uint8_t *data_out, uint8_t *len_out) {
+    if (!s_uart_enabled) return false;
     /* Drain all available bytes through the TLV state machine */
     while (rx_ready()) {
         uint8_t byte = rx_byte();
