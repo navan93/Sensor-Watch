@@ -14,7 +14,7 @@
 #ifndef BLE_UART_RX_PIN
 #define BLE_UART_RX_PIN  A1   /* BLE→watch: PB01 ↔ nRF P0.18 (nRF TX) */
 #endif
-#define BLE_UART_BAUD    115200
+#define BLE_UART_BAUD    9600
 
 /* TX uses the same ASF4 io path as watch_uart_puts(), but binary-safe (no strlen). */
 extern struct io_descriptor *uart_io;
@@ -35,15 +35,15 @@ typedef enum { TLV_TYPE, TLV_LENGTH, TLV_VALUE } tlv_state_t;
 
 static tlv_state_t  s_state;
 static uint8_t      s_type;
-static uint8_t      s_length;
-static uint8_t      s_value[BLE_TLV_MAX_LEN];
-static uint8_t      s_idx;
+static volatile uint8_t      s_length;
+static volatile uint8_t      s_value[BLE_TLV_MAX_LEN];
+static volatile uint8_t      s_idx;
 
 /* Double-buffer: ISR fills s_*, task reads s_pending_* */
 static bool         s_frame_ready;
 static uint8_t      s_pending_type;
-static uint8_t      s_pending_data[BLE_TLV_MAX_LEN];
-static uint8_t      s_pending_len;
+static volatile uint8_t      s_pending_data[BLE_TLV_MAX_LEN];
+static volatile uint8_t      s_pending_len;
 
 static bool         s_uart_enabled;
 

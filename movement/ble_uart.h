@@ -15,6 +15,7 @@
 #define BLE_CMD_BLE_CTRL    0x04  /* value: [0x00=off, 0x01=on]  */
 #define BLE_CMD_PING        0x05  /* value: (none) — echoes ACK  */
 #define BLE_CMD_GET_TIME    0x06  /* value: (none) — reads CTS   */
+#define BLE_CMD_ECHO        0x07  /* value: 4 bytes — echoed back for link testing */
 
 #define BLE_TLV_MAX_LEN     16
 
